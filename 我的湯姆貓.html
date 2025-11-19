@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的湯姆貓</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #87CEEB 0%, #98FB98 100%);
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        .game-container {
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            padding: 30px;
+            position: relative;
+            max-width: 800px;
+            width: 90%;
+        }
+        
+        .title {
+            text-align: center;
+            font-size: 32px;
+            color: #2F4F4F;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .cat-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(to bottom, #87CEEB 0%, #90EE90 50%, #228B22 100%);
+            border-radius: 15px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 3px solid #4a4a4a;
+        }
+        
+        #tomCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .control-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(45deg, #FF6B6B, #FF8E53);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .control-btn:active {
+            transform: translateY(0);
+        }
+        
+        .info-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 15px;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .mood-indicator {
+            font-size: 24px;
+            text-align: center;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+        }
+        
+        .speech-bubble {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 10;
+        }
+        
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid white;
+        }
+        
+        .speech-bubble.show {
+            opacity: 1;
+        }
+        
+        .floating-items {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+        
+        .floating-item {
+            position: absolute;
+            font-size: 30px;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .interaction-area {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="title">🐱 我的湯姆貓 🐱</h1>
+        
+        <div class="cat-container">
+            <canvas id="tomCanvas" width="740" height="400"></canvas>
+            <div class="speech-bubble" id="speechBubble"></div>
+            <div class="floating-items" id="floatingItems"></div>
+            <div class="interaction-area" id="interactionArea"></div>
+        </div>
+        
+        <div class="controls">
+            <button class="control-btn" onclick="petCat()">🐾 摸摸湯姆</button>
+            <button class="control-btn" onclick="feedCat()">🍖 餵食</button>
+            <button class="control-btn" onclick="playWithCat()">🎾 玩遊戲</button>
+            <button class="control-btn" onclick="makeNoise()">🔊 發出聲音</button>
+            <button class="control-btn" onclick="dance()">💃 跳舞</button>
+        </div>
+        
+        <div class="info-panel">
+            <div>心情: <span id="mood">😊 閒置中</span></div>
+            <div>飢餓度: <span id="hunger">50%</span></div>
+            <div>快樂度: <span id="happiness">80%</span></div>
+        </div>
+        
+        <div class="mood-indicator">
+            <div>湯姆貓狀態: <span id="catStatus">正在等待互動...</span></div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('tomCanvas');
+        const ctx = canvas.getContext('2d');
+        const speechBubble = document.getElementById('speechBubble');
+        const floatingItems = document.getElementById('floatingItems');
+        const interactionArea = document.getElementById('interactionArea');
+        
+        // 湯姆貓狀態
+        let tomCat = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            size: 80,
+            mood: 'happy',
+            hunger: 50,
+            happiness: 80,
+            isSleeping: false,
+            isEating: false,
+            isPlaying: false,
+            isDancing: false,
+            lastInteraction: 0,
+            animationFrame: 0,
+            eyeState: 'open',
+            tailAngle: 0
+        };
+        
+        // 湯姆貓對話
+        const catMessages = {
+            happy: ['喵~ 😊', '我好開心!', '你真好!', '我愛你!'],
+            hungry: ['我餓了... 🍖', '給我食物!', '肚子好餓...', '喵~ 餵我嘛!'],
+            sad: ['我不開心... 😢', '陪我玩嘛!', '我好無聊...', '喵~ 抱抱我!'],
+            sleeping: ['Zzz... 😴', '別吵我...', '我在睡覺...', '夢到你了...'],
+            eating: ['好吃! 😋', '還要更多!', '美味!', '喵~ 好吃!'],
+            playing: ['好有趣! 🎾', '再玩一次!', '我贏了!', '喵~ 遊戲好玩!'],
+            dancing: ['跳舞時間! 💃', '旋轉跳躍!', '我會跳舞!', '喵~ 跳舞最棒!']
+        };
+        
+        // 繪製湯姆貓
+        function drawTomCat() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 繪製背景
+            drawBackground();
+            
+            // 計算動畫偏移
+            const bobOffset = Math.sin(tomCat.animationFrame * 0.1) * 5;
+            const currentY = tomCat.y + bobOffset;
+            
+            // 繪製陰影
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.beginPath();
+            ctx.ellipse(tomCat.x, tomCat.y + tomCat.size/2 + 10, tomCat.size/2, tomCat.size/6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 繪製身體
+            ctx.fillStyle = '#4A90E2';
+            ctx.beginPath();
+            ctx.ellipse(tomCat.x, currentY, tomCat.size, tomCat.size * 0.8, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 繪製頭部
+            ctx.fillStyle = '#5BA0F2';
+            ctx.beginPath();
+            ctx.arc(tomCat.x, currentY - tomCat.size * 0.6, tomCat.size * 0.7, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 繪製耳朵
+            ctx.fillStyle = '#4A90E2';
+            // 左耳
+            ctx.beginPath();
+            ctx.moveTo(tomCat.x - tomCat.size * 0.5, currentY - tomCat.size * 0.9);
+            ctx.lineTo(tomCat.x - tomCat.size * 0.3, currentY - tomCat.size * 1.2);
+            ctx.lineTo(tomCat.x - tomCat.size * 0.1, currentY - tomCat.size * 0.9);
+            ctx.fill();
+            
+            // 右耳
+            ctx.beginPath();
+            ctx.moveTo(tomCat.x + tomCat.size * 0.5, currentY - tomCat.size * 0.9);
+            ctx.lineTo(tomCat.x + tomCat.size * 0.3, currentY - tomCat.size * 1.2);
+            ctx.lineTo(tomCat.x + tomCat.size * 0.1, currentY - tomCat.size * 0.9);
+            ctx.fill();
+            
+            // 繪製眼睛
+            drawEyes(currentY);
+            
+            // 繪製鼻子
+            ctx.fillStyle = '#FF69B4';
+            ctx.beginPath();
+            ctx.arc(tomCat.x, currentY - tomCat.size * 0.5, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 繪製嘴巴
+            drawMouth(currentY);
+            
+            // 繪製鬍鬚
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            // 左邊鬍鬚
+            ctx.beginPath();
+            ctx.moveTo(tomCat.x - tomCat.size * 0.3, currentY - tomCat.size * 0.4);
+            ctx.lineTo(tomCat.x - tomCat.size * 0.6, currentY - tomCat.size * 0.3);
+            ctx.moveTo(tomCat.x - tomCat.size * 0.3, currentY - tomCat.size * 0.5);
+            ctx.lineTo(tomCat.x - tomCat.size * 0.6, currentY - tomCat.size * 0.5);
+            ctx.moveTo(tomCat.x - tomCat.size * 0.3, currentY - tomCat.size * 0.6);
+            ctx.lineTo(tomCat.x - tomCat.size * 0.6, currentY - tomCat.size * 0.7);
+            ctx.stroke();
+            
+            // 右邊鬍鬚
+            ctx.beginPath();
+            ctx.moveTo(tomCat.x + tomCat.size * 0.3, currentY - tomCat.size * 0.4);
+            ctx.lineTo(tomCat.x + tomCat.size * 0.6, currentY - tomCat.size * 0.3);
+            ctx.moveTo(tomCat.x + tomCat.size * 0.3, currentY - tomCat.size * 0.5);
+            ctx.lineTo(tomCat.x + tomCat.size * 0.6, currentY - tomCat.size * 0.5);
+            ctx.moveTo(tomCat.x + tomCat.size * 0.3, currentY - tomCat.size * 0.6);
+            ctx.lineTo(tomCat.x + tomCat.size * 0.6, currentY - tomCat.size * 0.7);
+            ctx.stroke();
+            
+            // 繪製尾巴
+            drawTail(currentY);
+            
+            // 繪製腳
+            ctx.fillStyle = '#4A90E2';
+            // 前腳
+            ctx.beginPath();
+            ctx.ellipse(tomCat.x - tomCat.size * 0.3, currentY + tomCat.size * 0.6, tomCat.size * 0.2, tomCat.size * 0.3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(tomCat.x + tomCat.size * 0.3, currentY + tomCat.size * 0.6, tomCat.size * 0.2, tomCat.size * 0.3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 後腳
+            ctx.beginPath();
+            ctx.ellipse(tomCat.x - tomCat.size * 0.2, currentY + tomCat.size * 0.8, tomCat.size * 0.25, tomCat.size * 0.25, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(tomCat.x + tomCat.size * 0.2, currentY + tomCat.size * 0.8, tomCat.size * 0.25, tomCat.size * 0.25, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 更新動畫
+            tomCat.animationFrame++;
+            if (tomCat.animationFrame % 60 === 0) {
+                updateCatMood();
+            }
+        }
+        
+        function drawBackground() {
+            // 繪製地板
+            ctx.fillStyle = '#8FBC8F';
+            ctx.fillRect(0, canvas.height * 0.8, canvas.width, canvas.height * 0.2);
+            
+            // 繪製一些裝飾
+            ctx.fillStyle = '#90EE90';
+            for (let i = 0; i < 5; i++) {
+                const x = (i + 1) * canvas.width / 6;
+                const y = canvas.height * 0.75;
+                ctx.beginPath();
+                ctx.arc(x, y, 15, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function drawEyes(currentY) {
+            const eyeY = currentY - tomCat.size * 0.6;
+            
+            if (tomCat.eyeState === 'open') {
+                // 左眼
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(tomCat.x - tomCat.size * 0.2, eyeY, tomCat.size * 0.15, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = 'black';
+                ctx.beginPath();
+                ctx.arc(tomCat.x - tomCat.size * 0.2, eyeY, tomCat.size * 0.08, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 右眼
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(tomCat.x + tomCat.size * 0.2, eyeY, tomCat.size * 0.15, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = 'black';
+                ctx.beginPath();
+                ctx.arc(tomCat.x + tomCat.size * 0.2, eyeY, tomCat.size * 0.08, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (tomCat.eyeState === 'closed') {
+                // 左眼閉著
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(tomCat.x - tomCat.size * 0.2, eyeY, tomCat.size * 0.15, 0, Math.PI);
+                ctx.stroke();
+                
+                // 右眼閉著
+                ctx.beginPath();
+                ctx.arc(tomCat.x + tomCat.size * 0.2, eyeY, tomCat.size * 0.15, 0, Math.PI);
+                ctx.stroke();
+            } else if (tomCat.eyeState === 'sleep') {
+                // 左眼睡著
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(tomCat.x - tomCat.size * 0.25, eyeY);
+                ctx.lineTo(tomCat.x - tomCat.size * 0.15, eyeY);
+                ctx.stroke();
+                
+                // 右眼睡著
+                ctx.beginPath();
+                ctx.moveTo(tomCat.x + tomCat.size * 0.15, eyeY);
+                ctx.lineTo(tomCat.x + tomCat.size * 0.25, eyeY);
+                ctx.stroke();
+            }
+        }
+        
+        function drawMouth(currentY) {
+            const mouthY = currentY - tomCat.size * 0.4;
+            
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+            
+            if (tomCat.mood === 'happy') {
+                // 微笑
+                ctx.beginPath();
+                ctx.arc(tomCat.x, mouthY, tomCat.size * 0.2, 0, Math.PI);
+                ctx.stroke();
+            } else if (tomCat.mood === 'sad') {
+                // 悲傷
+                ctx.beginPath();
+                ctx.arc(tomCat.x, mouthY + tomCat.size * 0.1, tomCat.size * 0.2, Math.PI, 0);
+                ctx.stroke();
+            } else if (tomCat.mood === 'eating') {
+                // 吃東西的嘴
+                ctx.beginPath();
+                ctx.ellipse(tomCat.x, mouthY, tomCat.size * 0.15, tomCat.size * 0.1, 0, 0, Math.PI * 2);
+                ctx.stroke();
+            } else {
+                // 普通嘴巴
+                ctx.beginPath();
+                ctx.moveTo(tomCat.x - tomCat.size * 0.1, mouthY);
+                ctx.lineTo(tomCat.x + tomCat.size * 0.1, mouthY);
+                ctx.stroke();
+            }
+        }
+        
+        function drawTail(currentY) {
+            ctx.strokeStyle = '#4A90E2';
+            ctx.lineWidth = 15;
+            ctx.lineCap = 'round';
+            
+            const tailBaseX = tomCat.x + tomCat.size * 0.8;
+            const tailBaseY = currentY + tomCat.size * 0.2;
+            const tailEndX = tailBaseX + Math.cos(tomCat.tailAngle) * tomCat.size * 0.8;
+            const tailEndY = tailBaseY + Math.sin(tomCat.tailAngle) * tomCat.size * 0.8;
+            
+            ctx.beginPath();
+            ctx.moveTo(tailBaseX, tailBaseY);
+            ctx.quadraticCurveTo(
+                tailBaseX + tomCat.size * 0.4, 
+                tailBaseY - tomCat.size * 0.3,
+                tailEndX, 
+                tailEndY
+            );
+            ctx.stroke();
+            
+            // 更新尾巴角度
+            if (tomCat.isDancing) {
+                tomCat.tailAngle += 0.3;
+            } else {
+                tomCat.tailAngle += 0.05;
+            }
+        }
+        
+        function updateCatMood() {
+            // 自動更新飢餓度
+            if (!tomCat.isEating) {
+                tomCat.hunger = Math.min(100, tomCat.hunger + 2);
+            }
+            
+            // 自動更新快樂度
+            if (tomCat.hunger > 70) {
+                tomCat.happiness = Math.max(0, tomCat.happiness - 3);
+            } else {
+                tomCat.happiness = Math.min(100, tomCat.happiness + 1);
+            }
+            
+            // 根據狀態更新心情
+            if (tomCat.isSleeping) {
+                tomCat.mood = 'sleeping';
+                tomCat.eyeState = 'sleep';
+            } else if (tomCat.isEating) {
+                tomCat.mood = 'eating';
+                tomCat.eyeState = 'open';
+            } else if (tomCat.isPlaying) {
+                tomCat.mood = 'playing';
+                tomCat.eyeState = 'open';
+            } else if (tomCat.isDancing) {
+                tomCat.mood = 'dancing';
+                tomCat.eyeState = 'open';
+            } else if (tomCat.hunger > 70) {
+                tomCat.mood = 'hungry';
+                tomCat.eyeState = 'open';
+            } else if (tomCat.happiness < 30) {
+                tomCat.mood = 'sad';
+                tomCat.eyeState = 'closed';
+            } else {
+                tomCat.mood = 'happy';
+                tomCat.eyeState = 'open';
+            }
+            
+            updateUI();
+        }
+        
+        function updateUI() {
+            const moodElement = document.getElementById('mood');
+            const hungerElement = document.getElementById('hunger');
+            const happinessElement = document.getElementById('happiness');
+            const statusElement = document.getElementById('catStatus');
+            
+            // 更新心情顯示
+            let moodText = '';
+            switch(tomCat.mood) {
+                case 'happy': moodText = '😊 閒置中'; break;
+                case 'hungry': moodText = '😋 餓了'; break;
+                case 'sad': moodText = '😂 悲傷'; break;
+                case 'sleeping': moodText = '😴 睡覺中'; break;
+                case 'eating': moodText = '🍖 吃東西'; break;
+                case 'playing': moodText = '🎾 玩遊戲'; break;
+                case 'dancing': moodText = '💃 跳舞中'; break;
+            }
+            moodElement.textContent = moodText;
+            
+            // 更新飢餓度
+            hungerElement.textContent = tomCat.hunger + '%';
+            
+            // 更新快樂度
+            happinessElement.textContent = tomCat.happiness + '%';
+            
+            // 更新狀態
+            let statusText = '';
+            switch(tomCat.mood) {
+                case 'happy': statusText = '湯姆貓很開心，正在享受陽光!'; break;
+                case 'hungry': statusText = '湯姆貓肚子餓了，需要食物!'; break;
+                case 'sad': statusText = '湯姆貓有點悲傷，需要關心...'; break;
+                case 'sleeping': statusText = '湯姆貓正在睡覺，請保持安靜...'; break;
+                case 'eating': statusText = '湯姆貓正在享受美食!'; break;
+                case 'playing': statusText = '湯姆貓玩得很開心!'; break;
+                case 'dancing': statusText = '湯姆貓正在跳舞，好棒!'; break;
+            }
+            statusElement.textContent = statusText;
+        }
+        
+        function showSpeech(message) {
+            speechBubble.textContent = message;
+            speechBubble.classList.add('show');
+            
+            setTimeout(() => {
+                speechBubble.classList.remove('show');
+            }, 3000);
+        }
+        
+        function createFloatingItem(emoji) {
+            const item = document.createElement('div');
+            item.className = 'floating-item';
+            item.textContent = emoji;
+            item.style.left = Math.random() * 80 + 10 + '%';
+            item.style.top = Math.random() * 60 + 20 + '%';
+            item.style.animationDelay = Math.random() * 2 + 's';
+            
+            floatingItems.appendChild(item);
+            
+            setTimeout(() => {
+                item.remove();
+            }, 3000);
+        }
+        
+        // 互動功能
+        function petCat() {
+            tomCat.isSleeping = false;
+            tomCat.isEating = false;
+            tomCat.isPlaying = false;
+            tomCat.isDancing = false;
+            tomCat.happiness = Math.min(100, tomCat.happiness + 10);
+            
+            const messages = catMessages.happy;
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            showSpeech(randomMessage);
+            
+            createFloatingItem('❤️');
+            updateCatMood();
+        }
+        
+        function feedCat() {
+            if (tomCat.hunger > 20) {
+                tomCat.isEating = true;
+                tomCat.hunger = Math.max(0, tomCat.hunger - 30);
+                tomCat.happiness = Math.min(100, tomCat.happiness + 15);
+                
+                const messages = catMessages.eating;
+                const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+                showSpeech(randomMessage);
+                
+                createFloatingItem('🍖');
+                
+                setTimeout(() => {
+                    tomCat.isEating = false;
+                    updateCatMood();
+                }, 3000);
+            } else {
+                showSpeech('我不餓了喵~ 😊');
+            }
+            updateCatMood();
+        }
+        
+        function playWithCat() {
+            tomCat.isPlaying = true;
+            tomCat.happiness = Math.min(100, tomCat.happiness + 20);
+            tomCat.hunger = Math.min(100, tomCat.hunger + 5);
+            
+            const messages = catMessages.playing;
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            showSpeech(randomMessage);
+            
+            createFloatingItem('🎾');
+            
+            setTimeout(() => {
+                tomCat.isPlaying = false;
+                updateCatMood();
+            }, 3000);
+            updateCatMood();
+        }
+        
+        function makeNoise() {
+            const noises = ['喵~', '喵喵!', '嗚~', '喵嗚~'];
+            const randomNoise = noises[Math.floor(Math.random() * noises.length)];
+            showSpeech(randomNoise);
+            
+            createFloatingItem('🔊');
+            updateCatMood();
+        }
+        
+        function dance() {
+            tomCat.isDancing = true;
+            tomCat.happiness = Math.min(100, tomCat.happiness + 15);
+            
+            const messages = catMessages.dancing;
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            showSpeech(randomMessage);
+            
+            createFloatingItem('💃');
+            
+            setTimeout(() => {
+                tomCat.isDancing = false;
+                updateCatMood();
+            }, 4000);
+            updateCatMood();
+        }
+        
+        // 點擊畫布互動
+        interactionArea.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // 檢查是否點擊到湯姆貓
+            const distance = Math.sqrt((x - tomCat.x) ** 2 + (y - tomCat.y) ** 2);
+            if (distance < tomCat.size) {
+                petCat();
+            }
+        });
+        
+        // 遊戲循環
+        function gameLoop() {
+            drawTomCat();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // 初始化
+        updateUI();
+        gameLoop();
+        
+        // 定期更新湯姆貓狀態
+        setInterval(() => {
+            updateCatMood();
+        }, 2000);
+    </script>
+</body>
+</html>
