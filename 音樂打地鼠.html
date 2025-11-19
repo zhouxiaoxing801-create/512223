@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音樂打地鼠</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 800px;
+            width: 90%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .score, .time, .level {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hole {
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, #8B4513 0%, #654321 70%);
+            border-radius: 50%;
+            position: relative;
+            cursor: pointer;
+            box-shadow: inset 0 10px 20px rgba(0, 0, 0, 0.5);
+            border: 5px solid #5D4037;
+            overflow: hidden;
+        }
+
+        .mole {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(45deg, #8D6E63, #6D4C41);
+            border-radius: 50% 50% 40% 40%;
+            position: absolute;
+            bottom: -80px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: bottom 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .mole::before {
+            content: '';
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background: #333;
+            border-radius: 50%;
+            top: 20px;
+            left: 20px;
+            box-shadow: 25px 0 0 #333;
+        }
+
+        .mole::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 10px;
+            background: #E91E63;
+            border-radius: 50%;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .mole.show {
+            bottom: 20px;
+        }
+
+        .mole.hit {
+            background: linear-gradient(45deg, #FF5722, #F44336);
+            transform: translateX(-50%) rotate(360deg);
+        }
+
+        .controls {
+            margin-top: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.stop {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+        }
+
+        .music-controls {
+            margin-top: 15px;
+        }
+
+        .music-btn {
+            background: linear-gradient(45deg, #9C27B0, #7B1FA2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1em;
+            border-radius: 20px;
+            cursor: pointer;
+            margin: 0 5px;
+            transition: all 0.3s ease;
+        }
+
+        .music-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .game-over-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-over h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .final-score {
+            font-size: 1.5em;
+            color: #ff6b6b;
+            margin-bottom: 20px;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateX(-50%) translateY(0);
+            }
+            40% {
+                transform: translateX(-50%) translateY(-10px);
+            }
+            60% {
+                transform: translateX(-50%) translateY(-5px);
+            }
+        }
+
+        .mole.bounce {
+            animation: bounce 0.6s;
+        }
+
+        @media (max-width: 600px) {
+            .game-board {
+                max-width: 350px;
+            }
+            
+            .hole {
+                width: 90px;
+                height: 90px;
+            }
+            
+            .mole {
+                width: 60px;
+                height: 60px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎵 音樂打地鼠 🎵</h1>
+        
+        <div class="game-info">
+            <div class="score">分數: <span id="score">0</span></div>
+            <div class="time">時間: <span id="time">60</span>秒</div>
+            <div class="level">等級: <span id="level">1</span></div>
+        </div>
+
+        <div class="game-board" id="gameBoard">
+            <div class="hole" data-hole="0">
+                <div class="mole" data-mole="0"></div>
+            </div>
+            <div class="hole" data-hole="1">
+                <div class="mole" data-mole="1"></div>
+            </div>
+            <div class="hole" data-hole="2">
+                <div class="mole" data-mole="2"></div>
+            </div>
+            <div class="hole" data-hole="3">
+                <div class="mole" data-mole="3"></div>
+            </div>
+            <div class="hole" data-hole="4">
+                <div class="mole" data-mole="4"></div>
+            </div>
+            <div class="hole" data-hole="5">
+                <div class="mole" data-mole="5"></div>
+            </div>
+            <div class="hole" data-hole="6">
+                <div class="mole" data-mole="6"></div>
+            </div>
+            <div class="hole" data-hole="7">
+                <div class="mole" data-mole="7"></div>
+            </div>
+            <div class="hole" data-hole="8">
+                <div class="mole" data-mole="8"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" id="startBtn">開始遊戲</button>
+            <button class="btn stop" id="stopBtn">停止遊戲</button>
+        </div>
+
+        <div class="music-controls">
+            <button class="music-btn" id="musicBtn">🎵 音樂開關</button>
+            <button class="music-btn" id="soundBtn">🔊 音效開關</button>
+        </div>
+    </div>
+
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <h2>遊戲結束！</h2>
+            <div class="final-score">最終分數: <span id="finalScore">0</span></div>
+            <button class="btn" id="restartBtn">重新開始</button>
+        </div>
+    </div>
+
+    <script>
+        class MusicWhackAMole {
+            constructor() {
+                this.score = 0;
+                this.time = 60;
+                this.level = 1;
+                this.gameActive = false;
+                this.gameTimer = null;
+                this.moleTimer = null;
+                this.musicEnabled = true;
+                this.soundEnabled = true;
+                this.currentMole = null;
+                this.moleSpeed = 1500;
+                this.moleShowTime = 1000;
+                
+                this.initializeElements();
+                this.bindEvents();
+                this.createAudioContext();
+            }
+
+            initializeElements() {
+                this.scoreElement = document.getElementById('score');
+                this.timeElement = document.getElementById('time');
+                this.levelElement = document.getElementById('level');
+                this.gameBoard = document.getElementById('gameBoard');
+                this.startBtn = document.getElementById('startBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.musicBtn = document.getElementById('musicBtn');
+                this.soundBtn = document.getElementById('soundBtn');
+                this.gameOver = document.getElementById('gameOver');
+                this.finalScore = document.getElementById('finalScore');
+                this.restartBtn = document.getElementById('restartBtn');
+                this.moles = document.querySelectorAll('.mole');
+                this.holes = document.querySelectorAll('.hole');
+            }
+
+            bindEvents() {
+                this.startBtn.addEventListener('click', () => this.startGame());
+                this.stopBtn.addEventListener('click', () => this.stopGame());
+                this.musicBtn.addEventListener('click', () => this.toggleMusic());
+                this.soundBtn.addEventListener('click', () => this.toggleSound());
+                this.restartBtn.addEventListener('click', () => this.restartGame());
+                
+                this.moles.forEach(mole => {
+                    mole.addEventListener('click', (e) => this.whackMole(e));
+                });
+            }
+
+            createAudioContext() {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                this.createSounds();
+            }
+
+            createSounds() {
+                // 創建音效
+                this.sounds = {
+                    hit: this.createBeep(800, 0.1),
+                    miss: this.createBeep(200, 0.2),
+                    levelUp: this.createBeep(1200, 0.3),
+                    gameOver: this.createBeep(400, 0.5)
+                };
+            }
+
+            createBeep(frequency, duration) {
+                return () => {
+                    if (!this.soundEnabled) return;
+                    
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    oscillator.frequency.value = frequency;
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+                    
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + duration);
+                };
+            }
+
+            startGame() {
+                if (this.gameActive) return;
+                
+                this.gameActive = true;
+                this.score = 0;
+                this.time = 60;
+                this.level = 1;
+                this.moleSpeed = 1500;
+                this.moleShowTime = 1000;
+                
+                this.updateDisplay();
+                this.startBtn.textContent = '遊戲中...';
+                this.startBtn.disabled = true;
+                
+                this.gameTimer = setInterval(() => this.updateTimer(), 1000);
+                this.spawnMole();
+                
+                if (this.musicEnabled) {
+                    this.playBackgroundMusic();
+                }
+            }
+
+            stopGame() {
+                this.gameActive = false;
+                clearInterval(this.gameTimer);
+                clearTimeout(this.moleTimer);
+                
+                this.hideAllMoles();
+                this.startBtn.textContent = '開始遊戲';
+                this.startBtn.disabled = false;
+                
+                if (this.backgroundMusic) {
+                    this.backgroundMusic.stop();
+                }
+            }
+
+            restartGame() {
+                this.gameOver.style.display = 'none';
+                this.stopGame();
+                this.startGame();
+            }
+
+            updateTimer() {
+                this.time--;
+                this.timeElement.textContent = this.time;
+                
+                if (this.time <= 0) {
+                    this.endGame();
+                }
+            }
+
+            spawnMole() {
+                if (!this.gameActive) return;
+                
+                this.hideAllMoles();
+                
+                const randomHole = Math.floor(Math.random() * this.holes.length);
+                const mole = this.moles[randomHole];
+                
+                mole.classList.add('show');
+                this.currentMole = mole;
+                
+                this.moleTimer = setTimeout(() => {
+                    if (mole.classList.contains('show')) {
+                        mole.classList.remove('show');
+                        this.sounds.miss();
+                    }
+                    this.spawnMole();
+                }, this.moleShowTime);
+            }
+
+            whackMole(e) {
+                if (!this.gameActive) return;
+                
+                const mole = e.target;
+                if (!mole.classList.contains('show')) return;
+                
+                mole.classList.remove('show');
+                mole.classList.add('hit', 'bounce');
+                
+                this.score += 10;
+                this.updateDisplay();
+                this.sounds.hit();
+                
+                setTimeout(() => {
+                    mole.classList.remove('hit', 'bounce');
+                }, 600);
+                
+                // 檢查是否需要升級
+                if (this.score > 0 && this.score % 100 === 0) {
+                    this.levelUp();
+                }
+                
+                // 立即生成下一隻地鼠
+                clearTimeout(this.moleTimer);
+                this.spawnMole();
+            }
+
+            levelUp() {
+                this.level++;
+                this.moleSpeed = Math.max(800, this.moleSpeed - 100);
+                this.moleShowTime = Math.max(600, this.moleShowTime - 50);
+                this.updateDisplay();
+                this.sounds.levelUp();
+            }
+
+            hideAllMoles() {
+                this.moles.forEach(mole => {
+                    mole.classList.remove('show', 'hit', 'bounce');
+                });
+            }
+
+            updateDisplay() {
+                this.scoreElement.textContent = this.score;
+                this.timeElement.textContent = this.time;
+                this.levelElement.textContent = this.level;
+            }
+
+            endGame() {
+                this.gameActive = false;
+                clearInterval(this.gameTimer);
+                clearTimeout(this.moleTimer);
+                
+                this.hideAllMoles();
+                this.finalScore.textContent = this.score;
+                this.gameOver.style.display = 'flex';
+                
+                this.sounds.gameOver();
+                
+                if (this.backgroundMusic) {
+                    this.backgroundMusic.stop();
+                }
+            }
+
+            toggleMusic() {
+                this.musicEnabled = !this.musicEnabled;
+                this.musicBtn.textContent = this.musicEnabled ? '🎵 音樂開關' : '🔇 音樂開關';
+                
+                if (this.musicEnabled && this.gameActive) {
+                    this.playBackgroundMusic();
+                } else if (!this.musicEnabled && this.backgroundMusic) {
+                    this.backgroundMusic.stop();
+                }
+            }
+
+            toggleSound() {
+                this.soundEnabled = !this.soundEnabled;
+                this.soundBtn.textContent = this.soundEnabled ? '🔊 音效開關' : '🔇 音效開關';
+            }
+
+            playBackgroundMusic() {
+                if (!this.musicEnabled) return;
+                
+                // 創建簡單的背景音樂
+                const notes = [262, 294, 330, 349, 392, 440, 494, 523]; // C大調音階
+                let noteIndex = 0;
+                
+                const playNote = () => {
+                    if (!this.gameActive || !this.musicEnabled) return;
+                    
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    oscillator.frequency.value = notes[noteIndex];
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.5);
+                    
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + 0.5);
+                    
+                    noteIndex = (noteIndex + 1) % notes.length;
+                    
+                    setTimeout(playNote, 600);
+                };
+                
+                playNote();
+            }
+        }
+
+        // 初始化遊戲
+        document.addEventListener('DOMContentLoaded', () => {
+            new MusicWhackAMole();
+        });
+    </script>
+</body>
+</html>
