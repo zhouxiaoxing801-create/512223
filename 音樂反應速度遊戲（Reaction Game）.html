@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音樂反應速度遊戲</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 90%;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 3s ease-in-out infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .info-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px 25px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-width: 120px;
+        }
+
+        .info-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .game-area {
+            position: relative;
+            height: 400px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            margin: 30px 0;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+        }
+
+        .reaction-zone {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border: 3px solid #4ecdc4;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #4ecdc4;
+            background: rgba(78, 205, 196, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .reaction-zone.active {
+            background: rgba(78, 205, 196, 0.3);
+            box-shadow: 0 0 30px rgba(78, 205, 196, 0.6);
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .reaction-zone.waiting {
+            background: rgba(255, 107, 107, 0.1);
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+
+        .target {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .target:hover {
+            transform: scale(1.1);
+        }
+
+        .target.hit {
+            animation: hitEffect 0.3s ease-out forwards;
+        }
+
+        @keyframes hitEffect {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(45deg, #ee5a52, #ff6b6b);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(45deg, #44a08d, #4ecdc4);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(78, 205, 196, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+            box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
+        }
+
+        .btn-warning:hover {
+            background: linear-gradient(45deg, #e67e22, #f39c12);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(243, 156, 18, 0.4);
+        }
+
+        .difficulty-selector {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .difficulty-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            color: white;
+        }
+
+        .difficulty-btn.easy {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+        }
+
+        .difficulty-btn.medium {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+        }
+
+        .difficulty-btn.hard {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+
+        .difficulty-btn.active {
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: left;
+        }
+
+        .instructions h3 {
+            margin-top: 0;
+            color: #4ecdc4;
+            text-align: center;
+        }
+
+        .instructions p {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .reaction-result {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5em;
+            font-weight: bold;
+            padding: 10px 20px;
+            border-radius: 10px;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .reaction-result.show {
+            opacity: 1;
+        }
+
+        .reaction-result.excellent {
+            background: rgba(46, 204, 113, 0.8);
+            color: white;
+        }
+
+        .reaction-result.good {
+            background: rgba(241, 196, 15, 0.8);
+            color: white;
+        }
+
+        .reaction-result.slow {
+            background: rgba(231, 76, 60, 0.8);
+            color: white;
+        }
+
+        .music-notes {
+            position: absolute;
+            font-size: 20px;
+            animation: musicFloat 4s linear infinite;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        @keyframes musicFloat {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.4em;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .game-area {
+                height: 300px;
+            }
+            
+            .reaction-zone {
+                width: 150px;
+                height: 150px;
+            }
+            
+            .target {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 音樂符號裝飾 -->
+    <div class="music-notes" style="left: 10%; animation-delay: 0s;">♪</div>
+    <div class="music-notes" style="left: 30%; animation-delay: 1s;">♫</div>
+    <div class="music-notes" style="left: 50%; animation-delay: 2s;">♬</div>
+    <div class="music-notes" style="left: 70%; animation-delay: 3s;">♩</div>
+    <div class="music-notes" style="left: 90%; animation-delay: 4s;">♭</div>
+
+    <div class="game-container">
+        <h1>🎵 音樂反應速度遊戲 🎵</h1>
+        
+        <div class="game-info">
+            <div class="info-item">
+                <div class="info-label">分數</div>
+                <div class="info-value" id="score">0</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">連擊</div>
+                <div class="info-value" id="combo">0</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">時間</div>
+                <div class="info-value" id="timer">00:00</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">最佳反應</div>
+                <div class="info-value" id="bestReaction">-</div>
+            </div>
+        </div>
+
+        <div class="difficulty-selector">
+            <button class="difficulty-btn easy active" onclick="setDifficulty('easy')">簡單</button>
+            <button class="difficulty-btn medium" onclick="setDifficulty('medium')">中等</button>
+            <button class="difficulty-btn hard" onclick="setDifficulty('hard')">困難</button>
+        </div>
+
+        <div class="controls">
+            <button class="btn-success" onclick="startGame()">🎵 開始遊戲</button>
+            <button class="btn-warning" onclick="pauseGame()">⏸️ 暫停</button>
+            <button class="btn-primary" onclick="resetGame()">🔄 重新開始</button>
+        </div>
+
+        <div class="game-area" id="gameArea">
+            <div class="reaction-zone" id="reactionZone">準備開始</div>
+            <div class="reaction-result" id="reactionResult"></div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-label">平均反應時間</div>
+                <div class="stat-value" id="avgReaction">-</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">完美擊中</div>
+                <div class="stat-value" id="perfectHits">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">總擊中次數</div>
+                <div class="stat-value" id="totalHits">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">命中率</div>
+                <div class="stat-value" id="accuracy">0%</div>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>🎮 遊戲說明</h3>
+            <p>🎯 <strong>目標：</strong>測試你的音樂反應速度！當目標出現時盡快點擊它。</p>
+            <p>🎵 <strong>遊戲機制：</strong>目標會隨機出現在遊戲區域，點擊越快分數越高！</p>
+            <p>⏱️ <strong>反應評分：</strong>
+                <br>• 0.3秒內：完美 (300分)
+                <br>• 0.5秒內：良好 (200分)
+                <br>• 0.8秒內：普通 (100分)
+                <br>• 超過0.8秒：失誤 (0分)
+            </p>
+            <p>🔥 <strong>連擊系統：</strong>連續擊中目標獲得連擊獎勵，連擊越高分數倍數越高！</p>
+            <p>🎪 <strong>難度選擇：</strong>
+                <br>• 簡單：目標出現時間較長
+                <br>• 中等：目標出現時間適中
+                <br>• 困難：目標出現時間較短
+            </p>
+        </div>
+    </div>
+
+    <script>
+        class MusicReactionGame {
+            constructor() {
+                this.gameArea = document.getElementById('gameArea');
+                this.reactionZone = document.getElementById('reactionZone');
+                this.reactionResult = document.getElementById('reactionResult');
+                
+                this.score = 0;
+                this.combo = 0;
+                this.maxCombo = 0;
+                this.isPlaying = false;
+                this.isPaused = false;
+                this.startTime = null;
+                this.gameTime = 0;
+                this.difficulty = 'easy';
+                
+                this.currentTarget = null;
+                this.targetAppearTime = 0;
+                this.reactionTimes = [];
+                this.totalHits = 0;
+                this.perfectHits = 0;
+                
+                this.gameInterval = null;
+                this.timerInterval = null;
+                this.targetInterval = null;
+                this.audioContext = null;
+                
+                this.difficultySettings = {
+                    easy: { minDelay: 2000, maxDelay: 4000, targetDuration: 2000 },
+                    medium: { minDelay: 1500, maxDelay: 3000, targetDuration: 1500 },
+                    hard: { minDelay: 1000, maxDelay: 2000, targetDuration: 1000 }
+                };
+                
+                this.init();
+            }
+
+            init() {
+                this.setupAudio();
+                this.createMusicNotes();
+                this.updateDisplay();
+            }
+
+            setupAudio() {
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.log('Web Audio API 不支持');
+                }
+            }
+
+            createMusicNotes() {
+                const notes = ['♪', '♫', '♬', '♩', '♭', '♯'];
+                
+                setInterval(() => {
+                    if (Math.random() < 0.3) {
+                        const note = document.createElement('div');
+                        note.className = 'music-notes';
+                        note.textContent = notes[Math.floor(Math.random() * notes.length)];
+                        note.style.left = Math.random() * 100 + '%';
+                        note.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                        document.body.appendChild(note);
+                        
+                        setTimeout(() => {
+                            if (note.parentNode) {
+                                document.body.removeChild(note);
+                            }
+                        }, 5000);
+                    }
+                }, 2000);
+            }
+
+            startGame() {
+                if (this.isPlaying && !this.isPaused) return;
+                
+                if (this.isPaused) {
+                    this.isPaused = false;
+                    this.resumeGame();
+                    return;
+                }
+
+                this.isPlaying = true;
+                this.isPaused = false;
+                this.startTime = Date.now();
+                this.score = 0;
+                this.combo = 0;
+                this.reactionTimes = [];
+                this.totalHits = 0;
+                this.perfectHits = 0;
+                
+                this.updateDisplay();
+                this.startTimer();
+                this.spawnTarget();
+                this.playBackgroundMusic();
+            }
+
+            pauseGame() {
+                if (!this.isPlaying || this.isPaused) return;
+                
+                this.isPaused = true;
+                clearInterval(this.gameInterval);
+                clearInterval(this.timerInterval);
+                clearTimeout(this.targetInterval);
+                
+                if (this.currentTarget) {
+                    this.currentTarget.remove();
+                    this.currentTarget = null;
+                }
+                
+                this.reactionZone.textContent = '遊戲已暫停';
+                this.reactionZone.className = 'reaction-zone waiting';
+            }
+
+            resumeGame() {
+                this.startTime = Date.now() - this.gameTime;
+                this.startTimer();
+                this.spawnTarget();
+            }
+
+            resetGame() {
+                this.isPlaying = false;
+                this.isPaused = false;
+                this.score = 0;
+                this.combo = 0;
+                this.gameTime = 0;
+                this.reactionTimes = [];
+                this.totalHits = 0;
+                this.perfectHits = 0;
+                
+                clearInterval(this.gameInterval);
+                clearInterval(this.timerInterval);
+                clearTimeout(this.targetInterval);
+                
+                if (this.currentTarget) {
+                    this.currentTarget.remove();
+                    this.currentTarget = null;
+                }
+                
+                this.reactionZone.textContent = '準備開始';
+                this.reactionZone.className = 'reaction-zone';
+                this.reactionResult.className = 'reaction-result';
+                
+                this.updateDisplay();
+                this.updateTimer();
+            }
+
+            spawnTarget() {
+                if (!this.isPlaying || this.isPaused) return;
+                
+                // 移除現有的目標
+                if (this.currentTarget) {
+                    this.currentTarget.remove();
+                    this.currentTarget = null;
+                }
+                
+                // 創建新目標
+                this.currentTarget = document.createElement('div');
+                this.currentTarget.className = 'target';
+                
+                const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#f39c12', '#9b59b6'];
+                const symbols = ['🎵', '🎶', '🎼', '🎹', '🎸', '🥁'];
+                
+                const randomIndex = Math.floor(Math.random() * colors.length);
+                this.currentTarget.style.background = `linear-gradient(45deg, ${colors[randomIndex]}, ${this.adjustColor(colors[randomIndex], -20)})`;
+                this.currentTarget.textContent = symbols[randomIndex];
+                
+                // 隨機位置
+                const gameAreaRect = this.gameArea.getBoundingClientRect();
+                const maxX = gameAreaRect.width - 60;
+                const maxY = gameAreaRect.height - 60;
+                
+                let x, y;
+                do {
+                    x = Math.random() * maxX;
+                    y = Math.random() * maxY;
+                } while (this.isInReactionZone(x + 30, y + 30));
+                
+                this.currentTarget.style.left = x + 'px';
+                this.currentTarget.style.top = y + 'px';
+                
+                this.currentTarget.addEventListener('click', (e) => this.hitTarget(e));
+                this.gameArea.appendChild(this.currentTarget);
+                
+                this.targetAppearTime = Date.now();
+                
+                // 設置目標消失時間
+                const settings = this.difficultySettings[this.difficulty];
+                this.targetInterval = setTimeout(() => {
+                    if (this.currentTarget && this.currentTarget.parentNode) {
+                        this.missTarget();
+                    }
+                }, settings.targetDuration);
+                
+                // 設置下一個目標的延遲
+                const nextDelay = Math.random() * (settings.maxDelay - settings.minDelay) + settings.minDelay;
+                this.targetInterval = setTimeout(() => {
+                    this.spawnTarget();
+                }, nextDelay);
+            }
+
+            isInReactionZone(x, y) {
+                const zoneRect = this.reactionZone.getBoundingClientRect();
+                const gameAreaRect = this.gameArea.getBoundingClientRect();
+                const zoneCenterX = zoneRect.left - gameAreaRect.left + zoneRect.width / 2;
+                const zoneCenterY = zoneRect.top - gameAreaRect.top + zoneRect.height / 2;
+                const distance = Math.sqrt(Math.pow(x - zoneCenterX, 2) + Math.pow(y - zoneCenterY, 2));
+                return distance < 100;
+            }
+
+            hitTarget(e) {
+                if (!this.isPlaying || this.isPaused || !this.currentTarget) return;
+                
+                e.stopPropagation();
+                
+                const reactionTime = Date.now() - this.targetAppearTime;
+                this.reactionTimes.push(reactionTime);
+                this.totalHits++;
+                
+                let points = 0;
+                let rating = '';
+                let soundFreq = 400;
+                
+                if (reactionTime <= 300) {
+                    points = 300;
+                    rating = '完美!';
+                    soundFreq = 800;
+                    this.perfectHits++;
+                } else if (reactionTime <= 500) {
+                    points = 200;
+                    rating = '良好!';
+                    soundFreq = 600;
+                } else if (reactionTime <= 800) {
+                    points = 100;
+                    rating = '普通';
+                    soundFreq = 400;
+                } else {
+                    points = 0;
+                    rating = '太慢了';
+                    soundFreq = 200;
+                }
+                
+                // 連擊系統
+                if (points > 0) {
+                    this.combo++;
+                    points *= (1 + this.combo * 0.1);
+                    if (this.combo > this.maxCombo) {
+                        this.maxCombo = this.combo;
+                    }
+                } else {
+                    this.combo = 0;
+                }
+                
+                this.score += points;
+                
+                // 顯示反應結果
+                this.showReactionResult(rating, reactionTime);
+                
+                // 播放音效
+                this.playHitSound(soundFreq);
+                
+                // 移除目標
+                this.currentTarget.classList.add('hit');
+                setTimeout(() => {
+                    if (this.currentTarget && this.currentTarget.parentNode) {
+                        this.currentTarget.remove();
+                        this.currentTarget = null;
+                    }
+                }, 300);
+                
+                // 清除延時器
+                clearTimeout(this.targetInterval);
+                
+                // 短暫延遲後生成下一個目標
+                setTimeout(() => {
+                    this.spawnTarget();
+                }, 500);
+                
+                this.updateDisplay();
+            }
+
+            missTarget() {
+                if (!this.currentTarget) return;
+                
+                this.combo = 0;
+                this.playMissSound();
+                
+                this.currentTarget.remove();
+                this.currentTarget = null;
+                
+                clearTimeout(this.targetInterval);
+                
+                setTimeout(() => {
+                    this.spawnTarget();
+                }, 1000);
+                
+                this.updateDisplay();
+            }
+
+            showReactionResult(rating, reactionTime) {
+                this.reactionResult.textContent = `${rating} (${reactionTime}ms)`;
+                this.reactionResult.className = 'reaction-result show';
+                
+                if (reactionTime <= 300) {
+                    this.reactionResult.classList.add('excellent');
+                } else if (reactionTime <= 500) {
+                    this.reactionResult.classList.add('good');
+                } else {
+                    this.reactionResult.classList.add('slow');
+                }
+                
+                setTimeout(() => {
+                    this.reactionResult.classList.remove('show');
+                }, 2000);
+            }
+
+            startTimer() {
+                this.timerInterval = setInterval(() => {
+                    if (!this.isPaused) {
+                        this.gameTime = Date.now() - this.startTime;
+                        this.updateTimer();
+                    }
+                }, 1000);
+            }
+
+            updateTimer() {
+                const seconds = Math.floor(this.gameTime / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                document.getElementById('timer').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+            }
+
+            updateDisplay() {
+                document.getElementById('score').textContent = Math.floor(this.score);
+                document.getElementById('combo').textContent = this.combo;
+                
+                // 更新統計數據
+                if (this.reactionTimes.length > 0) {
+                    const avgReaction = this.reactionTimes.reduce((a, b) => a + b, 0) / this.reactionTimes.length;
+                    document.getElementById('avgReaction').textContent = Math.round(avgReaction) + 'ms';
+                    document.getElementById('bestReaction').textContent = Math.round(Math.min(...this.reactionTimes)) + 'ms';
+                }
+                
+                document.getElementById('perfectHits').textContent = this.perfectHits;
+                document.getElementById('totalHits').textContent = this.totalHits;
+                
+                const accuracy = this.totalHits > 0 ? (this.perfectHits / this.totalHits * 100).toFixed(1) : 0;
+                document.getElementById('accuracy').textContent = accuracy + '%';
+            }
+
+            playHitSound(frequency) {
+                if (!this.audioContext) return;
+                
+                const oscillator = this.audioContext.createOscillator();
+                const gainNode = this.audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(this.audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+                
+                oscillator.start(this.audioContext.currentTime);
+                oscillator.stop(this.audioContext.currentTime + 0.1);
+            }
+
+            playMissSound() {
+                if (!this.audioContext) return;
+                
+                const oscillator = this.audioContext.createOscillator();
+                const gainNode = this.audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(this.audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(200, this.audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(100, this.audioContext.currentTime + 0.2);
+                gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
+                
+                oscillator.start(this.audioContext.currentTime);
+                oscillator.stop(this.audioContext.currentTime + 0.2);
+            }
+
+            playBackgroundMusic() {
+                if (!this.audioContext) return;
+                
+                const playBeat = () => {
+                    if (!this.isPlaying || this.isPaused) return;
+                    
+                    // 簡單的背景節奏
+                    const beatPattern = [60, 0, 200, 0, 60, 0, 200, 0];
+                    let currentBeat = 0;
+                    
+                    const playNextBeat = () => {
+                        if (!this.isPlaying || this.isPaused) return;
+                        
+                        if (beatPattern[currentBeat] > 0) {
+                            this.playHitSound(beatPattern[currentBeat]);
+                        }
+                        
+                        currentBeat = (currentBeat + 1) % beatPattern.length;
+                        setTimeout(playNextBeat, 250);
+                    };
+                    
+                    playNextBeat();
+                };
+                
+                playBeat();
+            }
+
+            adjustColor(color, amount) {
+                const num = parseInt(color.replace("#", ""), 16);
+                const amt = Math.round(2.55 * amount);
+                const R = (num >> 16) + amt;
+                const G = (num >> 8 & 0x00FF) + amt;
+                const B = (num & 0x0000FF) + amt;
+                return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                    (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                    (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+            }
+
+            setDifficulty(level) {
+                this.difficulty = level;
+                
+                // 更新按鈕狀態
+                document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.querySelector(`.difficulty-btn.${level}`).classList.add('active');
+            }
+        }
+
+        // 全局函數
+        let game;
+
+        function startGame() {
+            game.startGame();
+        }
+
+        function pauseGame() {
+            game.pauseGame();
+        }
+
+        function resetGame() {
+            game.resetGame();
+        }
+
+        function setDifficulty(level) {
+            game.setDifficulty(level);
+        }
+
+        // 初始化遊戲
+        document.addEventListener('DOMContentLoaded', () => {
+            game = new MusicReactionGame();
+        });
+
+        // 防止空格鍵滾動頁面
+        document.addEventListener('keydown', (e) => {
+            if (e.key === ' ') {
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>
