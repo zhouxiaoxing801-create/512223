@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>跟著音樂跳舞的角色</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        h1 {
+            color: white;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .stage {
+            width: 600px;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            margin: 20px auto;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .character {
+            width: 80px;
+            height: 120px;
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: all 0.1s ease;
+        }
+
+        .character-head {
+            width: 40px;
+            height: 40px;
+            background: #ffdbac;
+            border-radius: 50%;
+            margin: 0 auto;
+            position: relative;
+            border: 2px solid #333;
+        }
+
+        .character-eyes {
+            position: absolute;
+            top: 12px;
+            left: 8px;
+            width: 6px;
+            height: 6px;
+            background: #333;
+            border-radius: 50%;
+            box-shadow: 12px 0 0 #333;
+        }
+
+        .character-mouth {
+            position: absolute;
+            top: 22px;
+            left: 15px;
+            width: 10px;
+            height: 5px;
+            border: 2px solid #333;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+        }
+
+        .character-body {
+            width: 50px;
+            height: 60px;
+            background: #4CAF50;
+            margin: 5px auto;
+            border-radius: 10px;
+            border: 2px solid #333;
+            position: relative;
+        }
+
+        .character-arms {
+            position: absolute;
+            top: 10px;
+            left: -15px;
+            width: 15px;
+            height: 30px;
+            background: #ffdbac;
+            border-radius: 8px;
+            border: 2px solid #333;
+            transform-origin: top center;
+            transition: transform 0.2s ease;
+        }
+
+        .character-arms.right {
+            left: auto;
+            right: -15px;
+        }
+
+        .character-legs {
+            position: absolute;
+            bottom: -25px;
+            left: 8px;
+            width: 12px;
+            height: 25px;
+            background: #2196F3;
+            border-radius: 6px;
+            border: 2px solid #333;
+            transform-origin: top center;
+            transition: transform 0.2s ease;
+        }
+
+        .character-legs.right {
+            left: auto;
+            right: 8px;
+        }
+
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .play-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .play-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .stop-btn {
+            background: linear-gradient(45deg, #f44336, #da190b);
+            color: white;
+        }
+
+        .stop-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.4);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-label {
+            padding: 12px 24px;
+            font-size: 16px;
+            background: linear-gradient(45deg, #2196F3, #0b7dda);
+            color: white;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+
+        .file-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+        }
+
+        .volume-control {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+        }
+
+        .volume-slider {
+            width: 150px;
+            height: 5px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.3);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4CAF50;
+            cursor: pointer;
+        }
+
+        .volume-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4CAF50;
+            cursor: pointer;
+            border: none;
+        }
+
+        .music-info {
+            color: white;
+            margin-top: 15px;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .visualizer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            display: flex;
+            align-items: end;
+            justify-content: center;
+            gap: 2px;
+            padding: 0 20px;
+        }
+
+        .bar {
+            width: 4px;
+            background: linear-gradient(to top, #4CAF50, #8BC34A);
+            border-radius: 2px 2px 0 0;
+            transition: height 0.1s ease;
+        }
+
+        @keyframes dance {
+            0%, 100% { transform: translateX(-50%) rotate(0deg); }
+            25% { transform: translateX(-50%) rotate(-5deg); }
+            75% { transform: translateX(-50%) rotate(5deg); }
+        }
+
+        @keyframes jump {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes armWave {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(30deg); }
+        }
+
+        @keyframes legMove {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(20deg); }
+        }
+
+        .dancing {
+            animation: dance 0.5s ease-in-out infinite;
+        }
+
+        .jumping {
+            animation: jump 0.6s ease-in-out infinite;
+        }
+
+        .waving-arms .character-arms {
+            animation: armWave 0.4s ease-in-out infinite;
+        }
+
+        .moving-legs .character-legs {
+            animation: legMove 0.3s ease-in-out infinite;
+        }
+
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: #FFD700;
+            border-radius: 50%;
+            animation: float 2s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { 
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            50% { 
+                transform: translateY(-50px) rotate(180deg);
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 跟著音樂跳舞的角色 🎵</h1>
+        
+        <div class="stage">
+            <div class="character" id="character">
+                <div class="character-head">
+                    <div class="character-eyes"></div>
+                    <div class="character-mouth"></div>
+                </div>
+                <div class="character-body">
+                    <div class="character-arms"></div>
+                    <div class="character-arms right"></div>
+                    <div class="character-legs"></div>
+                    <div class="character-legs right"></div>
+                </div>
+            </div>
+            
+            <div class="visualizer" id="visualizer">
+                <!-- 音頻可視化條形圖 -->
+            </div>
+            
+            <div class="particles" id="particles">
+                <!-- 粒子效果 -->
+            </div>
+        </div>
+
+        <div class="controls">
+            <input type="file" id="audioFile" class="file-input" accept="audio/*">
+            <label for="audioFile" class="file-label">📁 選擇音樂檔案</label>
+            
+            <button class="play-btn" id="playBtn">▶️ 播放</button>
+            <button class="stop-btn" id="stopBtn">⏹️ 停止</button>
+        </div>
+
+        <div class="volume-control">
+            <span>🔊 音量:</span>
+            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="50">
+            <span id="volumeValue">50%</span>
+        </div>
+
+        <div class="music-info" id="musicInfo">
+            請選擇音樂檔案開始跳舞！
+        </div>
+    </div>
+
+    <script>
+        class MusicDancer {
+            constructor() {
+                this.audio = new Audio();
+                this.audioContext = null;
+                this.analyser = null;
+                this.dataArray = null;
+                this.source = null;
+                this.isPlaying = false;
+                this.animationId = null;
+                
+                this.character = document.getElementById('character');
+                this.visualizer = document.getElementById('visualizer');
+                this.particles = document.getElementById('particles');
+                this.musicInfo = document.getElementById('musicInfo');
+                this.volumeSlider = document.getElementById('volumeSlider');
+                this.volumeValue = document.getElementById('volumeValue');
+                
+                this.initializeControls();
+                this.createVisualizerBars();
+                this.createParticles();
+            }
+
+            initializeControls() {
+                const audioFile = document.getElementById('audioFile');
+                const playBtn = document.getElementById('playBtn');
+                const stopBtn = document.getElementById('stopBtn');
+
+                audioFile.addEventListener('change', (e) => this.loadAudioFile(e));
+                playBtn.addEventListener('click', () => this.play());
+                stopBtn.addEventListener('click', () => this.stop());
+                
+                this.volumeSlider.addEventListener('input', (e) => {
+                    const volume = e.target.value / 100;
+                    this.audio.volume = volume;
+                    this.volumeValue.textContent = e.target.value + '%';
+                });
+            }
+
+            createVisualizerBars() {
+                for (let i = 0; i < 50; i++) {
+                    const bar = document.createElement('div');
+                    bar.className = 'bar';
+                    bar.style.height = '5px';
+                    this.visualizer.appendChild(bar);
+                }
+            }
+
+            createParticles() {
+                for (let i = 0; i < 20; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.left = Math.random() * 100 + '%';
+                    particle.style.animationDelay = Math.random() * 2 + 's';
+                    particle.style.animationDuration = (2 + Math.random() * 2) + 's';
+                    this.particles.appendChild(particle);
+                }
+            }
+
+            async loadAudioFile(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const url = URL.createObjectURL(file);
+                this.audio.src = url;
+                
+                this.musicInfo.textContent = `已載入: ${file.name}`;
+                
+                // 初始化音頻上下文
+                if (!this.audioContext) {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.analyser = this.audioContext.createAnalyser();
+                    this.analyser.fftSize = 256;
+                    
+                    const bufferLength = this.analyser.frequencyBinCount;
+                    this.dataArray = new Uint8Array(bufferLength);
+                    
+                    this.source = this.audioContext.createMediaElementSource(this.audio);
+                    this.source.connect(this.analyser);
+                    this.analyser.connect(this.audioContext.destination);
+                }
+            }
+
+            play() {
+                if (!this.audio.src) {
+                    this.musicInfo.textContent = '請先選擇音樂檔案！';
+                    return;
+                }
+
+                if (this.audioContext && this.audioContext.state === 'suspended') {
+                    this.audioContext.resume();
+                }
+
+                this.audio.play();
+                this.isPlaying = true;
+                this.animate();
+                this.character.classList.add('dancing', 'jumping', 'waving-arms', 'moving-legs');
+                this.musicInfo.textContent = '正在播放中...';
+            }
+
+            stop() {
+                this.audio.pause();
+                this.audio.currentTime = 0;
+                this.isPlaying = false;
+                
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                }
+                
+                this.character.classList.remove('dancing', 'jumping', 'waving-arms', 'moving-legs');
+                this.resetVisualizer();
+                this.musicInfo.textContent = '音樂已停止';
+            }
+
+            animate() {
+                if (!this.isPlaying) return;
+
+                this.animationId = requestAnimationFrame(() => this.animate());
+
+                if (this.analyser) {
+                    this.analyser.getByteFrequencyData(this.dataArray);
+                    this.updateVisualizer();
+                    this.updateCharacterDance();
+                }
+            }
+
+            updateVisualizer() {
+                const bars = this.visualizer.querySelectorAll('.bar');
+                const step = Math.floor(this.dataArray.length / bars.length);
+
+                bars.forEach((bar, index) => {
+                    const value = this.dataArray[index * step] || 0;
+                    const height = Math.max(5, (value / 255) * 80);
+                    bar.style.height = height + 'px';
+                });
+            }
+
+            updateCharacterDance() {
+                if (!this.dataArray) return;
+
+                // 計算音頻的平均音量
+                let sum = 0;
+                for (let i = 0; i < this.dataArray.length; i++) {
+                    sum += this.dataArray[i];
+                }
+                const average = sum / this.dataArray.length;
+
+                // 根據音量調整舞蹈強度
+                const intensity = average / 255;
+                
+                if (intensity > 0.7) {
+                    this.character.style.transform = `translateX(-50%) scale(1.1)`;
+                    this.createBurstEffect();
+                } else if (intensity > 0.4) {
+                    this.character.style.transform = `translateX(-50%) scale(1.05)`;
+                } else {
+                    this.character.style.transform = `translateX(-50%) scale(1)`;
+                }
+
+                // 調整舞蹈速度
+                const danceSpeed = Math.max(0.1, 0.5 - (intensity * 0.3));
+                this.character.style.animationDuration = danceSpeed + 's';
+            }
+
+            createBurstEffect() {
+                if (Math.random() < 0.1) { // 10% 機率產生爆發效果
+                    const particle = document.createElement('div');
+                    particle.style.position = 'absolute';
+                    particle.style.width = '8px';
+                    particle.style.height = '8px';
+                    particle.style.background = '#FFD700';
+                    particle.style.borderRadius = '50%';
+                    particle.style.left = '50%';
+                    particle.style.bottom = '120px';
+                    particle.style.transform = 'translateX(-50%)';
+                    particle.style.pointerEvents = 'none';
+                    particle.style.animation = 'float 1s ease-out forwards';
+                    
+                    this.character.parentElement.appendChild(particle);
+                    
+                    setTimeout(() => {
+                        if (particle.parentElement) {
+                            particle.parentElement.removeChild(particle);
+                        }
+                    }, 1000);
+                }
+            }
+
+            resetVisualizer() {
+                const bars = this.visualizer.querySelectorAll('.bar');
+                bars.forEach(bar => {
+                    bar.style.height = '5px';
+                });
+            }
+        }
+
+        // 初始化應用程式
+        document.addEventListener('DOMContentLoaded', () => {
+            new MusicDancer();
+        });
+
+        // 添加一些額外的互動效果
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                const playBtn = document.getElementById('playBtn');
+                const stopBtn = document.getElementById('stopBtn');
+                
+                if (document.querySelector('.dancing')) {
+                    stopBtn.click();
+                } else {
+                    playBtn.click();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
