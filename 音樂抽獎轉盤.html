@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音樂抽獎轉盤</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 800px;
+            width: 90%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 3s ease-in-out infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .score, .spins, .level {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            margin: 0 auto 30px;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+            border: 8px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .wheel {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 4s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+
+        .wheel-segment {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            transform-origin: right bottom;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .wheel-segment:hover {
+            filter: brightness(1.2);
+        }
+
+        .wheel-segment:nth-child(1) {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            transform: rotate(0deg);
+        }
+
+        .wheel-segment:nth-child(2) {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            transform: rotate(45deg);
+        }
+
+        .wheel-segment:nth-child(3) {
+            background: linear-gradient(45deg, #45b7d1, #2980b9);
+            transform: rotate(90deg);
+        }
+
+        .wheel-segment:nth-child(4) {
+            background: linear-gradient(45deg, #96ceb4, #27ae60);
+            transform: rotate(135deg);
+        }
+
+        .wheel-segment:nth-child(5) {
+            background: linear-gradient(45deg, #feca57, #ff9ff3);
+            transform: rotate(180deg);
+        }
+
+        .wheel-segment:nth-child(6) {
+            background: linear-gradient(45deg, #ff9ff3, #f368e0);
+            transform: rotate(225deg);
+        }
+
+        .wheel-segment:nth-child(7) {
+            background: linear-gradient(45deg, #54a0ff, #2e86de);
+            transform: rotate(270deg);
+        }
+
+        .wheel-segment:nth-child(8) {
+            background: linear-gradient(45deg, #5f27cd, #341f97);
+            transform: rotate(315deg);
+        }
+
+        .wheel-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(45deg, #ffd700, #ffb347);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            border: 3px solid #fff;
+            z-index: 10;
+        }
+
+        .wheel-pointer {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 40px solid #ff6b6b;
+            z-index: 15;
+            filter: drop-shadow(0 0 10px rgba(255, 107, 107, 0.5));
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(45deg, #ee5a24, #ff6b6b);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-primary:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(45deg, #44a08d, #4ecdc4);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(78, 205, 196, 0.4);
+        }
+
+        .music-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .music-btn {
+            background: linear-gradient(45deg, #9C27B0, #7B1FA2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1em;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .music-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .result-display {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .result-text {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        }
+
+        .prize-list {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .prize-list h3 {
+            margin-bottom: 15px;
+            color: #4ecdc4;
+        }
+
+        .prize-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .prize-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .prize-icon {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        .spinning {
+            animation: spin 4s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(var(--rotation)); }
+        }
+
+        .celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #ff6b6b;
+            animation: confetti-fall 3s linear infinite;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .volume-control {
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .volume-slider {
+            width: 150px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #ffd700;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .wheel-container {
+                width: 300px;
+                height: 300px;
+            }
+            
+            .wheel-segment {
+                font-size: 12px;
+            }
+            
+            .wheel-center {
+                width: 60px;
+                height: 60px;
+                font-size: 18px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎵 音樂抽獎轉盤 🎵</h1>
+        
+        <div class="game-info">
+            <div class="score">分數: <span id="score">0</span></div>
+            <div class="spins">剩餘次數: <span id="spins">5</span></div>
+            <div class="level">等級: <span id="level">1</span></div>
+        </div>
+
+        <div class="result-display">
+            <div class="result-text" id="resultText">點擊開始抽獎！</div>
+        </div>
+
+        <div class="wheel-container">
+            <div class="wheel-pointer"></div>
+            <div class="wheel" id="wheel">
+                <div class="wheel-segment" data-prize="1塊">💰<br>1塊</div>
+                <div class="wheel-segment" data-prize="5塊">💰<br>5塊</div>
+                <div class="wheel-segment" data-prize="10塊">💰<br>10塊</div>
+                <div class="wheel-segment" data-prize="20塊">💰<br>20塊</div>
+                <div class="wheel-segment" data-prize="30塊">💰<br>30塊</div>
+                <div class="wheel-segment" data-prize="40塊">💰<br>40塊</div>
+                <div class="wheel-segment" data-prize="50塊">💰<br>50塊</div>
+                <div class="wheel-segment" data-prize="100塊">💰<br>100塊</div>
+            </div>
+            <div class="wheel-center">🎯</div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-primary" id="spinBtn">🎲 開始抽獎</button>
+            <button class="btn-success" id="resetBtn">🔄 重新開始</button>
+        </div>
+
+        <div class="music-controls">
+            <button class="music-btn" id="musicBtn">🎵 音樂開關</button>
+            <button class="music-btn" id="soundBtn">🔊 音效開關</button>
+        </div>
+
+        <div class="volume-control">
+            <span>🔊</span>
+            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="50">
+            <span id="volumeValue">50%</span>
+        </div>
+
+        <div class="prize-list">
+            <h3>🏆 獎品列表</h3>
+            <div class="prize-item">
+                <span><span class="prize-icon">💰</span>1塊</span>
+                <span>1分</span>
+            </div>
+            <div class="prize-item">
+                <span><span class="prize-icon">💰</span>5塊</span>
+                <span>5分</span>
+            </div>
+            <div class="prize-item">
+                <span><span class="prize-icon">💰</span>10塊</span>
+                <span>10分</span>
+            </div>
+            <div class="prize-item">
+                <span><span class="prize-icon">💰</span>20塊</span>
+                <span>20分</span>
+            </div>
+            <div class="prize-item">
+                <span><span class="prize-icon">💰</span>30塊</span>
+                <span>30分</span>
+            </div>
+            <div class="prize-item">
+                <span><span class="prize-icon">💰</span>40塊</span>
+                <span>40分</span>
+            </div>
+            <div class="prize-item">
+                <span><span class="prize-icon">💰</span>50塊</span>
+                <span>50分</span>
+            </div>
+            <div class="prize-item">
+                <span><span class="prize-icon">💰</span>100塊</span>
+                <span>100分</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="celebration" id="celebration"></div>
+
+    <script>
+        class MusicWheelGame {
+            constructor() {
+                this.score = 0;
+                this.spins = 5;
+                this.level = 1;
+                this.isSpinning = false;
+                this.musicEnabled = true;
+                this.soundEnabled = true;
+                this.volume = 0.5;
+                this.currentRotation = 0;
+                
+                this.prizes = [
+                    { name: '1塊', icon: '💰', points: 1 },
+                    { name: '5塊', icon: '💰', points: 5 },
+                    { name: '10塊', icon: '💰', points: 10 },
+                    { name: '20塊', icon: '💰', points: 20 },
+                    { name: '30塊', icon: '💰', points: 30 },
+                    { name: '40塊', icon: '💰', points: 40 },
+                    { name: '50塊', icon: '💰', points: 50 },
+                    { name: '100塊', icon: '💰', points: 100 }
+                ];
+                
+                this.initializeElements();
+                this.bindEvents();
+                this.createAudioContext();
+                this.updateDisplay();
+            }
+
+            initializeElements() {
+                this.wheel = document.getElementById('wheel');
+                this.spinBtn = document.getElementById('spinBtn');
+                this.resetBtn = document.getElementById('resetBtn');
+                this.musicBtn = document.getElementById('musicBtn');
+                this.soundBtn = document.getElementById('soundBtn');
+                this.volumeSlider = document.getElementById('volumeSlider');
+                this.volumeValue = document.getElementById('volumeValue');
+                this.resultText = document.getElementById('resultText');
+                this.scoreElement = document.getElementById('score');
+                this.spinsElement = document.getElementById('spins');
+                this.levelElement = document.getElementById('level');
+                this.celebration = document.getElementById('celebration');
+            }
+
+            bindEvents() {
+                this.spinBtn.addEventListener('click', () => this.spin());
+                this.resetBtn.addEventListener('click', () => this.reset());
+                this.musicBtn.addEventListener('click', () => this.toggleMusic());
+                this.soundBtn.addEventListener('click', () => this.toggleSound());
+                this.volumeSlider.addEventListener('input', (e) => this.setVolume(e.target.value));
+            }
+
+            createAudioContext() {
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.createSounds();
+                } catch (e) {
+                    console.error('Web Audio API 不被支援');
+                }
+            }
+
+            createSounds() {
+                this.sounds = {
+                    spin: this.createBeep(440, 0.2),
+                    win: this.createBeep(880, 0.5),
+                    lose: this.createBeep(220, 0.3),
+                    levelUp: this.createBeep(660, 0.4),
+                    click: this.createBeep(330, 0.1)
+                };
+            }
+
+            createBeep(frequency, duration) {
+                return () => {
+                    if (!this.soundEnabled) return;
+                    
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    oscillator.frequency.value = frequency;
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+                    
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + duration);
+                };
+            }
+
+            spin() {
+                if (this.isSpinning || this.spins <= 0) return;
+                
+                this.isSpinning = true;
+                this.spinBtn.disabled = true;
+                this.sounds.click();
+                
+                // 隨機選擇獎品
+                const prizeIndex = Math.floor(Math.random() * this.prizes.length);
+                const prize = this.prizes[prizeIndex];
+                
+                // 計算旋轉角度
+                const segmentAngle = 360 / this.prizes.length;
+                const targetAngle = prizeIndex * segmentAngle;
+                const spins = 5 + Math.random() * 5; // 5-10圈
+                const finalRotation = this.currentRotation + spins * 360 + (360 - targetAngle);
+                
+                // 設置CSS變量
+                this.wheel.style.setProperty('--rotation', finalRotation + 'deg');
+                this.wheel.classList.add('spinning');
+                
+                // 播放旋轉音效
+                this.playSpinSound();
+                
+                // 4秒後顯示結果
+                setTimeout(() => {
+                    this.showResult(prize);
+                    this.currentRotation = finalRotation;
+                    this.wheel.classList.remove('spinning');
+                    this.isSpinning = false;
+                    this.spinBtn.disabled = false;
+                }, 4000);
+            }
+
+            showResult(prize) {
+                this.resultText.innerHTML = `🎉 恭喜獲得: ${prize.icon} ${prize.name} 🎉`;
+                
+                if (prize.points > 0) {
+                    this.score += prize.points;
+                    this.resultText.innerHTML += `<br>📊 獲得 ${prize.points} 分！`;
+                    this.sounds.win();
+                    
+                    // 檢查是否升級
+                    if (this.score >= this.level * 200) {
+                        this.level++;
+                        this.spins += 2; // 升級獲得額外次數
+                        this.resultText.innerHTML += `<br>🎊 恭喜升級到第 ${this.level} 關！`;
+                        this.sounds.levelUp();
+                    }
+                } else {
+                    this.sounds.lose();
+                }
+                
+                this.updateDisplay();
+                
+                // 創慶祝效果
+                if (prize.points >= 100) {
+                    this.createCelebration();
+                }
+            }
+
+            playSpinSound() {
+                if (!this.soundEnabled) return;
+                
+                // 播放旋轉音效序列
+                let time = 0;
+                const spinPattern = [220, 330, 440, 550, 660];
+                
+                spinPattern.forEach((freq, index) => {
+                    setTimeout(() => {
+                        this.sounds.spin = this.createBeep(freq, 0.1);
+                        this.sounds.spin();
+                    }, time);
+                    time += 100;
+                });
+            }
+
+            createCelebration() {
+                // 創造彩帶效果
+                for (let i = 0; i < 50; i++) {
+                    setTimeout(() => {
+                        const confetti = document.createElement('div');
+                        confetti.className = 'confetti';
+                        confetti.style.left = Math.random() * 100 + '%';
+                        confetti.style.background = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57'][Math.floor(Math.random() * 5)];
+                        confetti.style.animationDelay = Math.random() * 2 + 's';
+                        this.celebration.appendChild(confetti);
+                        
+                        setTimeout(() => {
+                            if (confetti.parentNode) {
+                                confetti.remove();
+                            }
+                        }, 3000);
+                    }, i * 50);
+                }
+            }
+
+            reset() {
+                this.score = 0;
+                this.spins = 5;
+                this.level = 1;
+                this.currentRotation = 0;
+                this.isSpinning = false;
+                this.spinBtn.disabled = false;
+                this.resultText.textContent = '點擊開始抽獎！';
+                this.wheel.style.transform = 'rotate(0deg)';
+                this.updateDisplay();
+                this.sounds.click();
+            }
+
+            toggleMusic() {
+                this.musicEnabled = !this.musicEnabled;
+                this.musicBtn.textContent = this.musicEnabled ? '🎵 音樂開關' : '🔇 音樂開關';
+                this.sounds.click();
+            }
+
+            toggleSound() {
+                this.soundEnabled = !this.soundEnabled;
+                this.soundBtn.textContent = this.soundEnabled ? '🔊 音效開關' : '🔇 音效開關';
+                this.sounds.click();
+            }
+
+            setVolume(value) {
+                this.volume = value / 100;
+                this.volumeValue.textContent = value + '%';
+            }
+
+            updateDisplay() {
+                this.scoreElement.textContent = this.score;
+                this.spinsElement.textContent = this.spins;
+                this.levelElement.textContent = this.level;
+                
+                // 檢查是否遊戲結束
+                if (this.spins <= 0) {
+                    this.resultText.innerHTML = `🎮 遊戲結束！<br>最終分數: ${this.score}<br>達到等級: ${this.level}`;
+                    this.spinBtn.disabled = true;
+                }
+            }
+        }
+
+        // 初始化遊戲
+        document.addEventListener('DOMContentLoaded', () => {
+            new MusicWheelGame();
+        });
+
+        // 處理用戶交互以啟用音頻
+        document.addEventListener('click', function initAudio() {
+            if (window.game && window.game.audioContext && window.game.audioContext.state === 'suspended') {
+                window.game.audioContext.resume();
+            }
+            document.removeEventListener('click', initAudio);
+        });
+    </script>
+</body>
+</html>
